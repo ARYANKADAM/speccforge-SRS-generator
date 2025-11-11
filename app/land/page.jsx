@@ -64,7 +64,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-sky-400 via-blue-500 to-slate-400 rounded-full blur-2xl opacity-40 group-hover:opacity-60 animate-pulse transition-opacity duration-500"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-sky-400 rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-300 animate-spin-slow"></div>
           <Image
-            src="/images/Logo2.png"
+            src="/images/logo2.png"
             alt="SpecForge Logo"
             width={120}
             height={120}
