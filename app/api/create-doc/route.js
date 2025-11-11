@@ -1,13 +1,45 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from "mongoose";
 import SRSForm from "@/models/SRSForm";
 import dbConnect from "@/lib/mongodb";
 import { uploadMarkdownToCloudinary } from "@/lib/cloudinary";
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Retry function with exponential backoff
+async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLastRetry = i === maxRetries - 1;
+      
+      // Check if it's a retryable error (429 = rate limit, 503 = overloaded, 500 = server error)
+      const statusCode = error?.status || error?.response?.status || error?.code;
+      const errorMessage = error?.message || '';
+      const isRetryableError = 
+        statusCode === 503 || 
+        statusCode === 429 || 
+        statusCode === 500 ||
+        errorMessage.includes("overloaded") ||
+        errorMessage.includes("rate limit") ||
+        errorMessage.includes("RESOURCE_EXHAUSTED");
+      
+      if (isLastRetry || !isRetryableError) {
+        throw error;
+      }
+      
+      // Calculate delay with exponential backoff: baseDelay * 2^i + random jitter
+      const delay = baseDelay * Math.pow(2, i) + Math.random() * 1000;
+      console.log(`Retry attempt ${i + 1}/${maxRetries} after ${Math.round(delay)}ms due to error:`, errorMessage || statusCode);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
 
 export async function POST(req) {
   await dbConnect();
@@ -92,15 +124,11 @@ Format the response as markdown only. Do not include any explanations or JSON. U
 `;
 
     // Generate markdown with Gemini
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      generationConfig: {
-        maxOutputTokens: 8192, // Set a reasonable limit 
-      },
-    });
-
-    const markdown = result.text;
+    console.log("Generating SRS with Gemini API...");
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent(prompt);
+    const markdown = result.response.text();
+    console.log("Successfully generated SRS document");
 
     // Upload markdown to Cloudinary with error handling
     let cloudinaryUrl = null;

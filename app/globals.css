@@ -12,6 +12,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Dark mode root variables */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -20,10 +26,12 @@
 }
 
 body {
-  /* background-color: #797777; */
   background-color: #f9fafb;
   color: var(--foreground);
-  /* font-family: Arial, Helvetica, sans-serif; */
   font-family: 'Satoshi', sans-serif;
 }
-/* font-family: 'Clash Display', sans-serif; */
+
+/* Dark mode body */
+.dark body {
+  background-color: #0a0a0a;
+}

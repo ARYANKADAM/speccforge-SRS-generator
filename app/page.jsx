@@ -372,135 +372,16 @@
 //   );
 // }
 "use client";
-import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export default function Home() {
+  const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-  }, []);
+    // Redirect to landing page
+    router.replace("/land");
+  }, [router]);
 
-  return (
-    <main className="bg-gray-50 relative min-h-screen flex flex-col items-center justify-start text-center overflow-hidden bg-cover bg-center bg-no-repeat bg-[url('/images/rays.png')]">
-      {/* Background Rays */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.9),transparent_70%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.9),transparent_70%)]"></div>
-      </div>
-
-      {/* 🌥️ Clouds Layer - Hidden on smaller screens */}
-      <div className="absolute inset-0 z-0 hidden sm:block">
-        <Image
-          src="/images/cloud.png"
-          alt="Cloud Center"
-          width={500}
-          height={600}
-          className="absolute top-[4%] left-1/2 -translate-x-1/2 opacity-30"
-          priority
-        />
-        <Image
-          src="/images/cloud.png"
-          alt="Cloud Left"
-          width={500}
-          height={300}
-          className="absolute top-[8%] left-[-10%] opacity-30"
-        />
-        <Image
-          src="/images/cloud.png"
-          alt="Cloud Right"
-          width={500}
-          height={300}
-          className="absolute top-[8%] right-[-10%] opacity-30"
-        />
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative z-10 w-full flex flex-col items-center px-4 mt-10 md:mt-20">
-        <div className="absolute inset-0 z-0 hidden sm:block">
-          <Image
-            src="/images/cloud.png"
-            alt="Cloud Left"
-            width={500}
-            height={300}
-            className="absolute top-1/3 -translate-y-1/2 left-[-10%] opacity-30"
-          />
-          <Image
-            src="/images/cloud.png"
-            alt="Cloud Right"
-            width={500}
-            height={300}
-            className="absolute top-1/3 -translate-y-1/2 right-[-10%] opacity-30"
-          />
-        </div>
-
-        {/* Floating Logo */}
-        <div className="relative z-10 flex items-center justify-center mb-1">
-          <Image
-            src="/images/Logo2.png"
-            alt="Logo"
-            width={100}
-            height={72}
-            className="object-contain w-[80px] md:w-[120px]"
-            priority
-          />
-        </div>
-
-        {/* Heading */}
-        <h1 className="relative z-10 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-md text-gray-900 max-w-4xl leading-tight px-4">
-          SpecForge - Smart Requirements Elicitation Chatbot using NLP
-        </h1>
-
-        {/* Subtitle */}
-        <p className="relative z-10 mt-4 text-gray-600 text-xs sm:text-sm md:text-base px-4 max-w-xl">
-          Your journey to AI-powered SRS generator starts here
-        </p>
-
-        {/* CTA Buttons (Auth Logic Added) */}
-        <div className="relative z-10 mt-6 justify-center flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-none px-4">
-          {isAuthenticated ? (
-            <>
-              <Link
-                href="/chat"
-                className="px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white text-sm md:text-base rounded-lg shadow-md flex items-center justify-center gap-2 transition"
-              >
-                Chat Mode
-              </Link>
-              <Link
-                href="/form"
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm md:text-base rounded-lg shadow-md flex items-center justify-center gap-2 transition"
-              >
-                Form Mode
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white text-sm md:text-base rounded-lg shadow-md transition"
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm md:text-base rounded-lg shadow-md flex items-center justify-center gap-2 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Footer Note */}
-        <p className="relative z-10 mt-10  text-gray-900 text-xs md:text-sm px-4">
-          Adopted by projects aiming for clarity, efficiency, and accuracy
-        </p>
-      </section>
-
-      {/* (Rest of your Info, Insights, and Footer sections remain unchanged) */}
-    </main>
-  );
+  return null; // No UI needed since we're redirecting
 }

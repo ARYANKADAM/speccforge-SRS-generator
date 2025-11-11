@@ -38,13 +38,13 @@ ${message}
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gemma:2b",
+        model: "gemma3:4b",
         prompt: prompt,
         stream: false,
       }),
     });
 
-    if (!response.ok) throw new Error("Failed to get response from Gemma2B");
+    if (!response.ok) throw new Error("Failed to get response from Gemma3-4B");
 
     const data = await response.json();
 
@@ -53,7 +53,7 @@ ${message}
       { userId },
       {
         $push: { messages: { role: "user", content: message } },
-        model: "Gemma2B",
+        model: "Gemma3-4B",
       },
       { upsert: true, new: true }
     );
