@@ -53,3 +53,55 @@ export async function GET(req, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req, { params }) {
+  await dbConnect();
+
+  // ✅ Must await params in App Router
+  const { id } = await params;
+
+  // Get token from Authorization header
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const token = authHeader.split("Bearer ")[1];
+
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.id;
+
+    // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid document ID" }, { status: 400 });
+    }
+
+    // Find the document
+    const document = await SRSForm.findById(id);
+
+    if (!document) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    // Check if the user owns this document
+    const isOwner =
+      (document.userId && document.userId.toString() === userId) ||
+      (document.createdBy && document.createdBy.toString() === userId);
+
+    if (!isOwner) {
+      return NextResponse.json({ error: "Unauthorized to delete this document" }, { status: 403 });
+    }
+
+    // Delete the document
+    await SRSForm.findByIdAndDelete(id);
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Document deleted successfully" 
+    });
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

@@ -41,6 +41,7 @@ export default function SRSFormPage() {
   const [loading, setLoading] = useState(false);
   const [srs, setSrs] = useState("");
   const [cloudinaryUrl, setCloudinaryUrl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const [currentSection, setCurrentSection] = useState("introduction");
   const [error, setError] = useState("");
 
@@ -113,6 +114,7 @@ export default function SRSFormPage() {
       const data = await res.json();
       setSrs(data.srs || "");
       setCloudinaryUrl(data.cloudinaryUrl || "");
+      setPdfUrl(data.pdfUrl || "");
       setCurrentSection("preview");
     } catch (error) {
       console.error("Error generating SRS:", error);
@@ -781,25 +783,42 @@ export default function SRSFormPage() {
             
             <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-2 border-gray-200 dark:border-slate-700 rounded-xl shadow-lg p-6">
               <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Markdown Preview</h4>
-                {cloudinaryUrl ? (
-                  <a
-                    href={cloudinaryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative px-6 py-3 overflow-hidden bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-blue-500/50 dark:hover:shadow-blue-600/50 transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-sky-600 to-blue-700 dark:from-blue-700 dark:to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="relative z-10 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    <span className="relative z-10">Download from Cloudinary</span>
-                  </a>
-                ) : (
-                  <span className="text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 rounded-xl border border-yellow-200 dark:border-yellow-800 text-sm">
-                    Note: Cloudinary upload failed. Document was saved to database only.
-                  </span>
-                )}
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Document Download</h4>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {pdfUrl ? (
+                    <a
+                      href={pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative px-6 py-3 overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 dark:from-emerald-600 dark:to-green-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-emerald-500/50 dark:hover:shadow-emerald-600/50 transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-700 dark:from-emerald-700 dark:to-green-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="relative z-10 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                      </svg>
+                      <span className="relative z-10">Download PDF</span>
+                    </a>
+                  ) : null}
+                  {cloudinaryUrl ? (
+                    <a
+                      href={cloudinaryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative px-6 py-3 overflow-hidden bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-blue-500/50 dark:hover:shadow-blue-600/50 transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-sky-600 to-blue-700 dark:from-blue-700 dark:to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="relative z-10 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      <span className="relative z-10">Download Markdown</span>
+                    </a>
+                  ) : null}
+                  {!pdfUrl && !cloudinaryUrl ? (
+                    <span className="text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 rounded-xl border border-yellow-200 dark:border-yellow-800 text-sm">
+                      Note: Upload failed. Document was saved to database only.
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <div className="bg-gray-50 dark:bg-slate-900/60 p-6 rounded-xl border border-gray-200 dark:border-slate-700 overflow-auto max-h-[500px]">
                 <pre className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono text-sm">{srs}</pre>

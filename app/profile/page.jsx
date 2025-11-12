@@ -57,6 +57,36 @@ export default function Profile() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleDelete = async (docId, projectName) => {
+    if (!confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/profile/documents/${docId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete document");
+      }
+
+      // Remove document from UI
+      setDocuments(documents.filter((doc) => doc._id !== docId));
+      
+      // Show success message (optional - you can add a toast notification here)
+      alert("Document deleted successfully!");
+    } catch (err) {
+      console.error("Error deleting document:", err);
+      alert("Failed to delete document: " + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-blue-950 dark:to-gray-900">
@@ -207,8 +237,19 @@ export default function Profile() {
                     {documents.map((doc) => (
                       <div
                         key={doc._id}
-                        className="group bg-white dark:bg-slate-800/80 rounded-2xl shadow-lg border-2 border-gray-100 dark:border-slate-700 p-6 hover:shadow-2xl hover:border-blue-200 dark:hover:border-purple-600 transition-all duration-300 transform hover:-translate-y-1 flex flex-col justify-between"
+                        className="group bg-white dark:bg-slate-800/80 rounded-2xl shadow-lg border-2 border-gray-100 dark:border-slate-700 p-6 hover:shadow-2xl hover:border-blue-200 dark:hover:border-purple-600 transition-all duration-300 transform hover:-translate-y-1 flex flex-col justify-between relative"
                       >
+                        {/* Delete Button - Top Right Corner */}
+                        <button
+                          onClick={() => handleDelete(doc._id, doc.projectName)}
+                          className="absolute top-4 right-4 p-2 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-lg transition-all duration-300 hover:scale-110 group/delete"
+                          title="Delete document"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+
                         <div>
                           {/* Icon */}
                           <div className="mb-4 p-4 bg-gradient-to-br from-sky-50 to-blue-50 dark:from-blue-900/30 dark:to-purple-900/30 inline-block rounded-xl group-hover:shadow-md transition-shadow duration-300">
@@ -232,10 +273,11 @@ export default function Profile() {
                         </div>
                         
                         {/* Action Buttons */}
-                        <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                        <div className="flex flex-col gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                          {/* View Button - Full Width */}
                           <Link
                             href={`/profile/${doc._id}`}
-                            className="flex-1 inline-flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold py-2 px-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors duration-300"
+                            className="w-full inline-flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold py-2 px-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors duration-300"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -243,26 +285,61 @@ export default function Profile() {
                             </svg>
                             View
                           </Link>
-                          {doc.cloudinaryUrl ? (
-                            <a
-                              href={doc.cloudinaryUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold py-2 px-3 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors duration-300"
-                            >
-                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                              Download
-                            </a>
-                          ) : (
-                            <span className="flex-1 inline-flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 py-2 px-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg cursor-not-allowed">
-                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                              N/A
-                            </span>
-                          )}
+                          
+                          {/* Download Buttons Row */}
+                          <div className="flex items-center gap-3">
+                            {/* Download PDF Button - Red */}
+                            {doc.pdfUrl && doc.pdfUrl.trim() !== "" ? (
+                              <a
+                                href={doc.pdfUrl}
+                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  console.log("PDF URL:", doc.pdfUrl);
+                                  if (!doc.pdfUrl.startsWith('http')) {
+                                    e.preventDefault();
+                                    alert('Invalid PDF URL: ' + doc.pdfUrl);
+                                  }
+                                }}
+                                className="flex-1 inline-flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-semibold py-2 px-3 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors duration-300"
+                              >
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                PDF
+                              </a>
+                            ) : (
+                              <span className="flex-1 inline-flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 py-2 px-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg cursor-not-allowed text-sm">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                                No PDF
+                              </span>
+                            )}
+                            
+                            {/* Download Markdown Button - Green */}
+                            {doc.cloudinaryUrl ? (
+                              <a
+                                href={doc.cloudinaryUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 inline-flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold py-2 px-3 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors duration-300"
+                              >
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                MD
+                              </a>
+                            ) : (
+                              <span className="flex-1 inline-flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 py-2 px-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg cursor-not-allowed text-sm">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                                No MD
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

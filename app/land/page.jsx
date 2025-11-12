@@ -236,7 +236,7 @@ export default function HomePage() {
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
               <Image
-                src="/images/3-page/image.png"
+                src="/images/3-page/Image.png"
                 alt="Chatbot Interface"
                 width={650}
                 height={700}

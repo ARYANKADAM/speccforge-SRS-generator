@@ -5,6 +5,9 @@ import mongoose from "mongoose";
 import SRSForm from "@/models/SRSForm";
 import dbConnect from "@/lib/mongodb";
 import { uploadMarkdownToCloudinary } from "@/lib/cloudinary";
+import { generatePDF } from "@/lib/pdfGenerator";
+import { generateSimplePDF } from "@/lib/simplePdfGenerator";
+import { uploadPDFToCloudinary } from "@/lib/cloudinaryPDF";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -130,13 +133,51 @@ Format the response as markdown only. Do not include any explanations or JSON. U
     const markdown = result.response.text();
     console.log("Successfully generated SRS document");
 
+    // Generate PDF from markdown
+    console.log("Generating PDF from markdown...");
+    let pdfBuffer = null;
+    let pdfUrl = null;
+    try {
+      pdfBuffer = await generatePDF(markdown, fields.projectName || "SRS-Document");
+      console.log("PDF generated successfully, size:", pdfBuffer.length, "bytes");
+      
+      // Upload PDF to Cloudinary
+      try {
+        pdfUrl = await uploadPDFToCloudinary(pdfBuffer, fields.projectName || "srs-document");
+        console.log("PDF uploaded to Cloudinary:", pdfUrl);
+      } catch (pdfUploadError) {
+        console.error("PDF upload to Cloudinary failed:", pdfUploadError);
+      }
+    } catch (pdfError) {
+      console.error("Puppeteer PDF generation failed:", pdfError);
+      console.error("Error details:", pdfError.message);
+      
+      // Try fallback simple PDF generator
+      try {
+        console.log("Attempting fallback simple PDF generation...");
+        pdfBuffer = await generateSimplePDF(markdown, fields.projectName || "SRS-Document");
+        console.log("Fallback PDF generated successfully, size:", pdfBuffer.length, "bytes");
+        
+        // Upload fallback PDF to Cloudinary
+        try {
+          pdfUrl = await uploadPDFToCloudinary(pdfBuffer, fields.projectName || "srs-document");
+          console.log("Fallback PDF uploaded to Cloudinary:", pdfUrl);
+        } catch (fallbackUploadError) {
+          console.error("Fallback PDF upload failed:", fallbackUploadError);
+        }
+      } catch (fallbackError) {
+        console.error("Fallback PDF generation also failed:", fallbackError);
+        // Continue without PDF - not critical
+      }
+    }
+
     // Upload markdown to Cloudinary with error handling
     let cloudinaryUrl = null;
     try {
       cloudinaryUrl = await uploadMarkdownToCloudinary(markdown, fields.projectName || "srs-document");
-      console.log("Cloudinary upload successful:", cloudinaryUrl);
+      console.log("Cloudinary markdown upload successful:", cloudinaryUrl);
     } catch (cloudinaryError) {
-      console.error("Cloudinary upload failed:", cloudinaryError);
+      console.error("Cloudinary markdown upload failed:", cloudinaryError);
       // Continue with saving to database, but without cloudinaryUrl
     }
 
@@ -146,6 +187,7 @@ Format the response as markdown only. Do not include any explanations or JSON. U
     const userObjectId = new mongoose.Types.ObjectId(userId);
     console.log("Created ObjectId:", userObjectId);
     console.log("Cloudinary URL to save:", cloudinaryUrl);
+    console.log("PDF URL to save:", pdfUrl);
     
     try {
       // Create the document object
@@ -189,10 +231,17 @@ Format the response as markdown only. Do not include any explanations or JSON. U
         console.log("Adding cloudinaryUrl to document:", cloudinaryUrl);
       }
       
+      // Explicitly set pdfUrl if it exists
+      if (pdfUrl) {
+        srsDocument.pdfUrl = pdfUrl;
+        console.log("Adding pdfUrl to document:", pdfUrl);
+      }
+      
       const savedDoc = await SRSForm.create(srsDocument);
       
       console.log("MongoDB save successful. Document ID:", savedDoc._id);
       console.log("Saved with cloudinaryUrl:", savedDoc.cloudinaryUrl);
+      console.log("Saved with pdfUrl:", savedDoc.pdfUrl);
       
       // Verify the document was saved with the cloudinaryUrl by fetching it again
       const verifiedDoc = await SRSForm.findById(savedDoc._id);
@@ -200,7 +249,9 @@ Format the response as markdown only. Do not include any explanations or JSON. U
         id: verifiedDoc._id,
         createdBy: verifiedDoc.createdBy,
         cloudinaryUrl: verifiedDoc.cloudinaryUrl,
+        pdfUrl: verifiedDoc.pdfUrl,
         hasCloudinaryUrlField: verifiedDoc.hasOwnProperty('cloudinaryUrl'),
+        hasPdfUrlField: verifiedDoc.hasOwnProperty('pdfUrl'),
         hasCreatedByField: verifiedDoc.hasOwnProperty('createdBy')
       });
     } catch (dbError) {
@@ -211,8 +262,10 @@ Format the response as markdown only. Do not include any explanations or JSON. U
     return NextResponse.json({ 
       srs: markdown, 
       cloudinaryUrl,
+      pdfUrl,
       savedToDb: true,
-      uploadStatus: cloudinaryUrl ? "success" : "failed" 
+      uploadStatus: cloudinaryUrl ? "success" : "failed",
+      pdfStatus: pdfUrl ? "success" : "failed"
     });
   } catch (error) {
     console.error("SRS generation error:", error);

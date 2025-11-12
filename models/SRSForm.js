@@ -55,6 +55,19 @@ const SRSFormSchema = new mongoose.Schema(
         message: props => `${props.value} is not a valid URL!`
       }
     }, // Cloudinary file link
+    pdfUrl: { 
+      type: String,
+      trim: true,
+      validate: {
+        validator: function(v) {
+          // Return true for null/undefined values to make the field optional
+          if (!v) return true;
+          // Simple URL validation
+          return /^https?:\/\/.+/.test(v);
+        },
+        message: props => `${props.value} is not a valid PDF URL!`
+      }
+    }, // PDF file link
   },
   { timestamps: true }
 );
