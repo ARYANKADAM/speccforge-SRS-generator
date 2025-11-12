@@ -39,6 +39,7 @@ export default function SRSFormPage() {
   });
   
   const [loading, setLoading] = useState(false);
+  const [autoFillLoading, setAutoFillLoading] = useState(false);
   const [srs, setSrs] = useState("");
   const [cloudinaryUrl, setCloudinaryUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
@@ -74,6 +75,86 @@ export default function SRSFormPage() {
     const updatedFeatures = [...form.features];
     updatedFeatures.splice(index, 1);
     setForm({ ...form, features: updatedFeatures });
+  };
+
+  const autoFillSuggestions = async () => {
+    if (!form.projectName || !form.purpose || !form.scope) {
+      setError("Please fill in Project Name, Purpose, and Scope first to enable AI suggestions");
+      return;
+    }
+
+    setAutoFillLoading(true);
+    setError("");
+    
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/ai-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          projectName: form.projectName,
+          purpose: form.purpose,
+          scope: form.scope,
+        }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to generate AI suggestions");
+      }
+
+      const data = await res.json();
+      
+      // Merge AI suggestions with existing form data (don't overwrite manually entered data)
+      setForm(prevForm => ({
+        ...prevForm,
+        definitions: prevForm.definitions || data.suggestions.definitions || "",
+        productPerspective: prevForm.productPerspective || data.suggestions.productPerspective || "",
+        productFunctions: prevForm.productFunctions || data.suggestions.productFunctions || "",
+        userClasses: prevForm.userClasses || data.suggestions.userClasses || "",
+        operatingEnvironment: prevForm.operatingEnvironment || data.suggestions.operatingEnvironment || "",
+        constraints: prevForm.constraints || data.suggestions.constraints || "",
+        assumptions: prevForm.assumptions || data.suggestions.assumptions || "",
+        userInterfaces: prevForm.userInterfaces || data.suggestions.userInterfaces || "",
+        hardwareInterfaces: prevForm.hardwareInterfaces || data.suggestions.hardwareInterfaces || "",
+        softwareInterfaces: prevForm.softwareInterfaces || data.suggestions.softwareInterfaces || "",
+        communicationInterfaces: prevForm.communicationInterfaces || data.suggestions.communicationInterfaces || "",
+        performance: prevForm.performance || data.suggestions.performance || "",
+        security: prevForm.security || data.suggestions.security || "",
+        reliability: prevForm.reliability || data.suggestions.reliability || "",
+        maintainability: prevForm.maintainability || data.suggestions.maintainability || "",
+        usability: prevForm.usability || data.suggestions.usability || "",
+        portability: prevForm.portability || data.suggestions.portability || "",
+        businessRules: prevForm.businessRules || data.suggestions.businessRules || "",
+        glossary: prevForm.glossary || data.suggestions.glossary || "",
+      }));
+
+      alert("✨ AI suggestions have been added to empty fields! Review and edit as needed.");
+    } catch (error) {
+      console.error("Error generating AI suggestions:", error);
+      
+      // User-friendly error messages
+      if (error.message.includes("429") || error.message.includes("rate limit") || error.message.includes("Resource exhausted")) {
+        setError("⏰ Too many requests! Please wait 60 seconds and try again. (Gemini API has rate limits on free tier)");
+      } else {
+        setError(error.message || "Failed to generate AI suggestions. Please try again.");
+      }
+    } finally {
+      setAutoFillLoading(false);
+    }
   };
 
   const generateSRS = async () => {
@@ -195,6 +276,50 @@ export default function SRSFormPage() {
                   rows={3}
                 />
               </div>
+            </div>
+
+            {/* AI Auto-Fill Suggestions Button */}
+            <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-2xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <h4 className="text-lg font-bold text-purple-700 dark:text-purple-300">✨ AI Smart Suggestions</h4>
+                  </div>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                    Based on your Project Name, Purpose, and Scope, our AI can intelligently fill remaining sections with relevant suggestions. You can review and edit them afterward!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={autoFillSuggestions}
+                  disabled={!form.projectName || !form.purpose || !form.scope || autoFillLoading}
+                  className="group relative px-6 py-3 overflow-hidden bg-gradient-to-r from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 whitespace-nowrap"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  {autoFillLoading ? (
+                    <>
+                      <svg className="relative z-10 animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="relative z-10">Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="relative z-10 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="relative z-10">Auto-Fill with AI</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Definitions/Acronyms</label>
                 <textarea
