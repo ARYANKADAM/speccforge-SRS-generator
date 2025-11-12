@@ -27,26 +27,26 @@ export default function HomePage() {
 
       {/* Animated Floating Clouds */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[5%] left-[-5%] animate-float-slow hidden sm:block opacity-30">
-          <Image src="/images/cloud.png" alt="Cloud" width={400} height={200} className="drop-shadow-lg" priority />
+        <div className="absolute top-[5%] left-[-5%] sm:left-[-5%] animate-float-slow opacity-30">
+          <Image src="/images/cloud.png" alt="Cloud" width={400} height={200} className="drop-shadow-lg w-32 sm:w-64 md:w-80 lg:w-96 h-auto" priority />
         </div>
-        <div className="absolute top-[10%] right-[-8%] animate-float-slower hidden lg:block opacity-25">
-          <Image src="/images/cloud.png" alt="Cloud" width={500} height={250} className="drop-shadow-lg" />
+        <div className="absolute top-[10%] right-[-8%] sm:right-[-8%] animate-float-slower opacity-25">
+          <Image src="/images/cloud.png" alt="Cloud" width={500} height={250} className="drop-shadow-lg w-40 sm:w-72 md:w-96 lg:w-[500px] h-auto" />
         </div>
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 animate-float hidden md:block opacity-20">
-          <Image src="/images/cloud.png" alt="Cloud" width={350} height={175} className="drop-shadow-lg" />
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 animate-float opacity-20">
+          <Image src="/images/cloud.png" alt="Cloud" width={350} height={175} className="drop-shadow-lg w-28 sm:w-56 md:w-72 lg:w-[350px] h-auto" />
         </div>
-        <div className="absolute top-[40%] left-[-10%] animate-float-slow hidden lg:block opacity-25">
-          <Image src="/images/cloud.png" alt="Cloud" width={450} height={225} className="drop-shadow-lg" />
+        <div className="absolute top-[40%] left-[-10%] sm:left-[-10%] animate-float-slow opacity-25">
+          <Image src="/images/cloud.png" alt="Cloud" width={450} height={225} className="drop-shadow-lg w-36 sm:w-64 md:w-80 lg:w-[450px] h-auto" />
         </div>
-        <div className="absolute top-[45%] right-[-12%] animate-float-slower hidden md:block opacity-20">
-          <Image src="/images/cloud.png" alt="Cloud" width={600} height={300} className="drop-shadow-lg" />
+        <div className="absolute top-[45%] right-[-12%] sm:right-[-12%] animate-float-slower opacity-20">
+          <Image src="/images/cloud.png" alt="Cloud" width={600} height={300} className="drop-shadow-lg w-48 sm:w-80 md:w-96 lg:w-[600px] h-auto" />
         </div>
-        <div className="absolute bottom-[20%] left-[5%] animate-float hidden lg:block opacity-25">
-          <Image src="/images/cloud.png" alt="Cloud" width={400} height={200} className="drop-shadow-lg" />
+        <div className="absolute bottom-[20%] left-[5%] sm:left-[5%] animate-float opacity-25">
+          <Image src="/images/cloud.png" alt="Cloud" width={400} height={200} className="drop-shadow-lg w-32 sm:w-64 md:w-80 lg:w-96 h-auto" />
         </div>
-        <div className="absolute bottom-[10%] right-[-15%] animate-float-slow hidden xl:block opacity-20">
-          <Image src="/images/cloud.png" alt="Cloud" width={700} height={350} className="drop-shadow-lg" />
+        <div className="absolute bottom-[10%] right-[-15%] sm:right-[-15%] animate-float-slow opacity-20">
+          <Image src="/images/cloud.png" alt="Cloud" width={700} height={350} className="drop-shadow-lg w-56 sm:w-96 md:w-[500px] lg:w-[700px] h-auto" />
         </div>
       </div>
 
@@ -166,7 +166,7 @@ export default function HomePage() {
             <div className="p-6 sm:p-8">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Image
-                  src="/images/2-page/icon.png"
+                  src="/images/2-page/Icon.png"
                   alt="What it Does"
                   width={48}
                   height={48}
@@ -188,7 +188,7 @@ export default function HomePage() {
             <div className="p-6 sm:p-8">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Image
-                  src="/images/2-page/icon1.png"
+                  src="/images/2-page/Icon1.png"
                   alt="Why it's Useful"
                   width={48}
                   height={48}
@@ -210,7 +210,7 @@ export default function HomePage() {
             <div className="p-6 sm:p-8">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Image
-                  src="/images/2-page/icon2.png"
+                  src="/images/2-page/Icon2.png"
                   alt="How to Start"
                   width={48}
                   height={48}
@@ -231,8 +231,22 @@ export default function HomePage() {
       {/* Intelligent Requirement Section */}
       <section className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          {/* Left Content */}
-          <div className="order-2 lg:order-1 text-center lg:text-left">
+          {/* Left Image - Chatbot */}
+          <div className="order-1 lg:order-1 flex justify-center lg:justify-start">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+              <Image
+                src="/images/3-page/image.png"
+                alt="Chatbot Interface"
+                width={650}
+                height={700}
+                className="relative object-contain drop-shadow-2xl rounded-2xl w-full max-w-[600px] sm:max-w-[800px] lg:max-w-[700px] transform group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </div>
+
+          {/* Right Content */}
+          <div className="order-2 lg:order-2 text-center lg:text-left">
             <span className="inline-block px-4 py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full mb-4">
               💡 Smarter Requirement Discovery
             </span>
@@ -278,20 +292,6 @@ export default function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-          </div>
-
-          {/* Right Image */}
-          <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-              <Image
-                src="/images/3-page/image.png"
-                alt="Chatbot Interface"
-                width={550}
-                height={400}
-                className="relative object-contain drop-shadow-2xl rounded-2xl w-full max-w-[400px] sm:max-w-[500px] lg:max-w-[550px] transform group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
           </div>
         </div>
       </section>
