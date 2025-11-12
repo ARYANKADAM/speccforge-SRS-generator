@@ -4,6 +4,134 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Nav from "../components/Nav";
 
+// Helper function to format bot messages
+const formatMessage = (text) => {
+  if (!text) return null;
+  
+  // Split by code blocks first
+  const parts = text.split(/```(\w+)?\n?([\s\S]*?)```/g);
+  const elements = [];
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 3 === 0 && parts[i]) {
+      // Regular text - process markdown
+      const lines = parts[i].split('\n');
+      lines.forEach((line, lineIdx) => {
+        // Headers
+        if (line.startsWith('### ')) {
+          elements.push(
+            <h3 key={`${i}-${lineIdx}`} className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-4 mb-2">
+              {line.substring(4)}
+            </h3>
+          );
+        } else if (line.startsWith('## ')) {
+          elements.push(
+            <h2 key={`${i}-${lineIdx}`} className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-5 mb-3">
+              {line.substring(3)}
+            </h2>
+          );
+        } else if (line.startsWith('# ')) {
+          elements.push(
+            <h1 key={`${i}-${lineIdx}`} className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-6 mb-3">
+              {line.substring(2)}
+            </h1>
+          );
+        }
+        // Bullet points (unordered lists)
+        else if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+          const content = line.trim().substring(2);
+          elements.push(
+            <li key={`${i}-${lineIdx}`} className="ml-6 mb-1 list-disc text-gray-800 dark:text-gray-200">
+              {formatInlineMarkdown(content)}
+            </li>
+          );
+        }
+        // Numbered lists
+        else if (/^\d+\.\s/.test(line.trim())) {
+          const content = line.trim().replace(/^\d+\.\s/, '');
+          elements.push(
+            <li key={`${i}-${lineIdx}`} className="ml-6 mb-1 list-decimal text-gray-800 dark:text-gray-200">
+              {formatInlineMarkdown(content)}
+            </li>
+          );
+        }
+        // Empty lines
+        else if (line.trim() === '') {
+          elements.push(<br key={`${i}-${lineIdx}`} />);
+        }
+        // Regular paragraphs
+        else if (line.trim()) {
+          elements.push(
+            <p key={`${i}-${lineIdx}`} className="mb-2 text-gray-800 dark:text-gray-200 leading-relaxed">
+              {formatInlineMarkdown(line)}
+            </p>
+          );
+        }
+      });
+    } else if (i % 3 === 2) {
+      // Code block
+      const language = parts[i - 1] || '';
+      const code = parts[i];
+      elements.push(
+        <div key={`code-${i}`} className="my-3 rounded-lg overflow-hidden">
+          {language && (
+            <div className="bg-gray-700 dark:bg-gray-800 px-4 py-1 text-xs text-gray-300 font-mono">
+              {language}
+            </div>
+          )}
+          <pre className="bg-gray-800 dark:bg-gray-900 p-4 overflow-x-auto">
+            <code className="text-sm text-gray-100 font-mono">{code}</code>
+          </pre>
+        </div>
+      );
+    }
+  }
+  
+  return <div>{elements}</div>;
+};
+
+// Helper for inline markdown (bold, italic, inline code)
+const formatInlineMarkdown = (text) => {
+  const parts = [];
+  let lastIndex = 0;
+  
+  // Match **bold**, *italic*, and `code`
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
+  let match;
+  
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    
+    const matched = match[0];
+    if (matched.startsWith('**') && matched.endsWith('**')) {
+      // Bold
+      parts.push(<strong key={match.index} className="font-bold text-gray-900 dark:text-white">{matched.slice(2, -2)}</strong>);
+    } else if (matched.startsWith('*') && matched.endsWith('*')) {
+      // Italic
+      parts.push(<em key={match.index} className="italic">{matched.slice(1, -1)}</em>);
+    } else if (matched.startsWith('`') && matched.endsWith('`')) {
+      // Inline code
+      parts.push(
+        <code key={match.index} className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono text-red-600 dark:text-red-400">
+          {matched.slice(1, -1)}
+        </code>
+      );
+    }
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  
+  return parts.length > 0 ? parts : text;
+};
+
 export default function ChatPage() {
   const router = useRouter();
   const [messages, setMessages] = useState([]);
@@ -103,8 +231,8 @@ export default function ChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 z-10 mb-[120px] pt-24">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 z-10 mb-[120px] pt-24">
+        <div className="max-w-5xl mx-auto">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg rounded-3xl shadow-2xl border-2 border-white/50 dark:border-slate-700/50 p-8 sm:p-12 relative overflow-hidden max-w-2xl">
@@ -136,13 +264,19 @@ export default function ChatPage() {
                 } animate-fade-in`}
               >
                 <div
-                  className={`rounded-2xl px-5 py-3 max-w-3xl shadow-lg ${
+                  className={`rounded-2xl px-6 py-4 shadow-lg ${
                     msg.role === "user"
-                      ? "bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white"
-                      : "bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-gray-800 dark:text-gray-200 border-2 border-white/50 dark:border-slate-700/50"
+                      ? "bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white max-w-2xl lg:max-w-3xl"
+                      : "bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-gray-800 dark:text-gray-200 border-2 border-gray-200/50 dark:border-slate-700/50 max-w-full lg:max-w-4xl"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === "user" ? (
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  ) : (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      {formatMessage(msg.content)}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -152,11 +286,11 @@ export default function ChatPage() {
       </div>
 
       {/* Input (sticky like ChatGPT) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-slate-50 via-blue-50/80 to-transparent dark:from-slate-950 dark:via-blue-950/80 backdrop-blur-sm pb-4 pt-6">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg rounded-2xl shadow-2xl border-2 border-white/50 dark:border-slate-700/50 p-3 flex items-end space-x-3">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-dark: pb-6 pt-8 ">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-gray-200 dark:border-slate-700 p-4 flex items-end space-x-3">
             <textarea
-              className="flex-1 rounded-xl px-4 py-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm text-gray-800 dark:text-gray-200 border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-blue-500 focus:border-sky-500 dark:focus:border-blue-500 resize-none transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="flex-1 rounded-xl px-5 py-3.5 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200 border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-blue-500 focus:border-sky-500 dark:focus:border-blue-500 resize-none transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-base"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -166,7 +300,7 @@ export default function ChatPage() {
               style={{ maxHeight: "150px" }}
             />
             <button
-              className="group relative px-6 py-3 overflow-hidden bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-blue-500/50 dark:hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="group relative px-7 py-3.5 overflow-hidden bg-gradient-to-r from-sky-500 to-blue-600 dark:from-blue-600 dark:to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-blue-500/50 dark:hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex-shrink-0"
               onClick={sendMessage}
               disabled={loading}
             >

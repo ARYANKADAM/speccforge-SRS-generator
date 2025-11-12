@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import Chat from "@/models/Chat";
 import dbConnect from "@/lib/mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function POST(request) {
   await dbConnect();
@@ -25,35 +27,47 @@ export async function POST(request) {
 
   const { message } = await request.json();
 
-  // Prompt for Gemma2B — no follow-up questions, only summary/structured output
-  const prompt = `
-Do NOT ask any follow-up questions. Only respond with the structured summary.
+  if (!message || message.trim() === "") {
+    return NextResponse.json({ error: "Message is required" }, { status: 400 });
+  }
 
-User input:
-${message}
-`;
+  // System prompt for chat assistant
+  const systemPrompt = `You are a helpful AI assistant for SpecForge, an SRS (Software Requirements Specification) document generator.
+Help users with questions about software requirements, project planning, and documentation.
+Provide clear, concise, and structured responses.
+Do not ask follow-up questions unless absolutely necessary.`;
 
   try {
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gemma3:4b",
-        prompt: prompt,
-        stream: false,
-      }),
+    // Use the same Gemini model as SRS generation (gemini-2.0-flash)
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      },
     });
+    
+    // Generate response
+    const prompt = `${systemPrompt}\n\nUser: ${message}\n\nAssistant:`;
+    const result = await model.generateContent(prompt);
+    
+    if (!result || !result.response) {
+      throw new Error("No response from Gemini API");
+    }
+    
+    const response = result.response;
+    const botReply = response.text();
 
-    if (!response.ok) throw new Error("Failed to get response from Gemma3-4B");
-
-    const data = await response.json();
+    if (!botReply) {
+      throw new Error("Empty response from Gemini API");
+    }
 
     // Save user message
     await Chat.findOneAndUpdate(
       { userId },
       {
         $push: { messages: { role: "user", content: message } },
-        model: "Gemma3-4B",
+        model: "Gemini-2.0-Flash",
       },
       { upsert: true, new: true }
     );
@@ -61,16 +75,30 @@ ${message}
     // Save bot reply
     await Chat.findOneAndUpdate(
       { userId },
-      { $push: { messages: { role: "bot", content: data.response } } }
+      { $push: { messages: { role: "bot", content: botReply } } }
     );
 
-    return NextResponse.json({ reply: data.response });
+    return NextResponse.json({ reply: botReply });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Chat API Error:", error);
+    console.error("Error details:", error.message);
+    console.error("Error stack:", error.stack);
+    
+    // Provide more specific error messages
+    let errorMessage = "Sorry, I'm having trouble connecting to the AI model.";
+    
+    if (error.message?.includes("API key")) {
+      errorMessage = "API key error. Please check your Gemini API configuration.";
+    } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
+      errorMessage = "API rate limit reached. Please try again in a moment.";
+    } else if (error.message?.includes("SAFETY")) {
+      errorMessage = "Sorry, I cannot respond to that message due to safety filters.";
+    }
+    
     return NextResponse.json(
-      {
-        reply:
-          "Sorry, I'm having trouble connecting to the AI model.",
+      { 
+        error: errorMessage,
+        reply: errorMessage 
       },
       { status: 500 }
     );
