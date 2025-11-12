@@ -108,6 +108,13 @@ export default function Nav() {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-sky-600 to-blue-600 dark:from-blue-400 dark:to-purple-400 group-hover:w-full transition-all duration-300"></span>
           </Link>
           <Link
+            href="/dashboard"
+            className="hover:text-blue-600 dark:hover:text-blue-400 text-sm py-2 sm:py-0 border-b border-gray-200 dark:border-slate-700 sm:border-0 w-full sm:w-auto text-center transition-colors duration-300 relative group"
+          >
+            Dashboard
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-sky-600 to-blue-600 dark:from-blue-400 dark:to-purple-400 group-hover:w-full transition-all duration-300"></span>
+          </Link>
+          <Link
             href="/profile"
             className="hover:text-blue-600 dark:hover:text-blue-400 text-sm py-2 sm:py-0 w-full sm:w-auto text-center transition-colors duration-300 relative group"
           >
