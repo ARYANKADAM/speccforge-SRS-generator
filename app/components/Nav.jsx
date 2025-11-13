@@ -2,26 +2,42 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const router = useRouter();
+  const router = useRouter();
+  const pathname = usePathname();
   
 
   useEffect(() => {
     // Check for token in localStorage
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+
+    // Check initially
+    checkAuth();
+
+    // Listen for storage changes (when user logs in/out in another tab)
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, [pathname]);
+
+  // Don't show logout on landing page - always show login
+  const isLandingPage = pathname === '/' || pathname === '/land';
+  const showLogout = isLoggedIn && !isLandingPage;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    // optional: redirect to login page
-    router.push("/")
+    router.push("/land");
   };
 
   return (
@@ -122,8 +138,8 @@ export default function Nav() {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-sky-600 to-blue-600 dark:from-blue-400 dark:to-purple-400 group-hover:w-full transition-all duration-300"></span>
           </Link>
 
-          {/* Dynamic Login/Logout */}
-          {isLoggedIn ? (
+          {/* Dynamic Login/Logout - Only show Logout on non-landing pages */}
+          {showLogout ? (
             <button
               onClick={handleLogout}
               className="text-sm bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 w-full sm:w-auto text-center mt-2 sm:mt-0"
