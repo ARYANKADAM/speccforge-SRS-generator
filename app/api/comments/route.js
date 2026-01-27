@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "../../../lib/mongodb";
 import Comment from "../../../models/Comment";
-import { getToken } from "next-auth/jwt";
 
 export async function GET(req) {
   await dbConnect();
