@@ -148,7 +148,7 @@ export default function SRSFormPage() {
       
       // User-friendly error messages
       if (error.message.includes("429") || error.message.includes("rate limit") || error.message.includes("Resource exhausted")) {
-        setError("⏰ Too many requests! Please wait 60 seconds and try again. (Gemini API has rate limits on free tier)");
+        setError("⏰ Too many requests! Please wait 60 seconds and try again. (API rate limit reached)");
       } else {
         setError(error.message || "Failed to generate AI suggestions. Please try again.");
       }

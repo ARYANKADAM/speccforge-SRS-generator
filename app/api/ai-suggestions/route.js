@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Retry function with exponential backoff for rate limits
 async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 2000) {
@@ -64,11 +64,13 @@ export async function POST(req) {
     // Build AI prompt for suggestions
     const prompt = `You are an expert software requirements analyst. Based on the following project information, generate detailed and professional content for an SRS (Software Requirements Specification) document.
 
-**Project Name:** ${projectName}
-**Purpose:** ${purpose}
-**Scope:** ${scope}
+Project Name: ${projectName}
+Purpose: ${purpose}
+Scope: ${scope}
 
-Generate comprehensive suggestions for the following sections. Return ONLY a valid JSON object with these exact field names. Each field value must be a STRING (not an object or array). Use line breaks (\\n) for lists:
+Generate comprehensive suggestions for the following sections. Your response MUST be ONLY a valid JSON object - no explanations, no markdown, no code blocks. Just the raw JSON object.
+
+Return a JSON object with these exact field names. Each field value must be a STRING (not an object or array). Use \\n for line breaks within strings:
 
 {
   "definitions": "List 3-5 key technical terms, acronyms, and their definitions. Format: Term1: Definition\\nTerm2: Definition",
@@ -92,77 +94,71 @@ Generate comprehensive suggestions for the following sections. Return ONLY a val
   "glossary": "List 5-10 key terms and definitions. Format: Term1: Definition\\nTerm2: Definition\\nTerm3: Definition"
 }
 
-IMPORTANT: 
-- ALL values must be plain text strings, NOT objects or arrays
-- Use \\n for line breaks within strings
-- Use bullet points (-) or numbers (1. 2. 3.) for lists
-- Be specific and detailed based on the project
-- Do not use nested JSON objects`;
+Remember: Return ONLY the JSON object, nothing else. No markdown, no explanations.`;
 
-    // Use Gemini to generate suggestions with retry logic
+    // Use Groq to generate suggestions with retry logic
     const result = await retryWithBackoff(async () => {
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 3000,
-        },
+      return await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.7,
+        max_tokens: 3000,
       });
-      return await model.generateContent(prompt);
     });
     
-    const response = result.response;
-    let aiResponse = response.text();
+    let aiResponse = result.choices[0]?.message?.content || "";
 
     console.log("Raw AI Response:", aiResponse);
 
-    // Extract JSON from response (handle markdown code blocks)
-    aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
-    // Parse JSON response
+    // Parse JSON response with multiple fallback strategies
     let suggestions;
     try {
+      // Strategy 1: Direct parse
       suggestions = JSON.parse(aiResponse);
-      
-      // Ensure all values are strings, not objects
-      Object.keys(suggestions).forEach(key => {
-        if (typeof suggestions[key] === 'object' && suggestions[key] !== null) {
-          // Convert objects/arrays to formatted strings
-          if (Array.isArray(suggestions[key])) {
-            suggestions[key] = suggestions[key].join('\n');
-          } else {
-            suggestions[key] = JSON.stringify(suggestions[key], null, 2);
-          }
-        } else if (typeof suggestions[key] !== 'string') {
-          suggestions[key] = String(suggestions[key]);
-        }
-      });
-      
     } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      console.error("Response was:", aiResponse);
+      console.error("Direct JSON parse failed, trying fallbacks...");
       
-      // Fallback: Try to extract JSON if wrapped in other text
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        suggestions = JSON.parse(jsonMatch[0]);
+      try {
+        // Strategy 2: Remove markdown code blocks and try again
+        let cleanedResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        suggestions = JSON.parse(cleanedResponse);
+      } catch (e2) {
+        console.error("Markdown removal failed, trying regex extraction...");
         
-        // Ensure all values are strings
-        Object.keys(suggestions).forEach(key => {
-          if (typeof suggestions[key] === 'object' && suggestions[key] !== null) {
-            if (Array.isArray(suggestions[key])) {
-              suggestions[key] = suggestions[key].join('\n');
-            } else {
-              suggestions[key] = JSON.stringify(suggestions[key], null, 2);
-            }
-          } else if (typeof suggestions[key] !== 'string') {
-            suggestions[key] = String(suggestions[key]);
+        try {
+          // Strategy 3: Extract JSON using regex
+          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            suggestions = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("No JSON object found in response");
           }
-        });
-      } else {
-        throw new Error("Failed to parse AI response as JSON");
+        } catch (e3) {
+          console.error("All parsing strategies failed");
+          console.error("Response was:", aiResponse);
+          throw new Error(`Failed to parse AI response as JSON. Response: ${aiResponse.substring(0, 200)}...`);
+        }
       }
     }
+    
+    // Ensure all values are strings, not objects
+    Object.keys(suggestions).forEach(key => {
+      if (typeof suggestions[key] === 'object' && suggestions[key] !== null) {
+        // Convert objects/arrays to formatted strings
+        if (Array.isArray(suggestions[key])) {
+          suggestions[key] = suggestions[key].join('\n');
+        } else {
+          suggestions[key] = JSON.stringify(suggestions[key], null, 2);
+        }
+      } else if (typeof suggestions[key] !== 'string') {
+        suggestions[key] = String(suggestions[key]);
+      }
+    });
 
     console.log("Generated suggestions successfully");
 

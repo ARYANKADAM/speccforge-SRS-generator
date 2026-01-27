@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import Chat from "@/models/Chat";
 import dbConnect from "@/lib/mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY2 });
 
 export async function POST(request) {
   await dbConnect();
@@ -38,28 +38,27 @@ Provide clear, concise, and structured responses.
 Do not ask follow-up questions unless absolutely necessary.`;
 
   try {
-    // Use the same Gemini model as SRS generation (gemini-2.0-flash)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      },
+    // Use Groq API with llama model
+    const result = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: message,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.7,
+      max_tokens: 2048,
     });
     
-    // Generate response
-    const prompt = `${systemPrompt}\n\nUser: ${message}\n\nAssistant:`;
-    const result = await model.generateContent(prompt);
-    
-    if (!result || !result.response) {
-      throw new Error("No response from Gemini API");
-    }
-    
-    const response = result.response;
-    const botReply = response.text();
+    const botReply = result.choices[0]?.message?.content || "";
 
     if (!botReply) {
-      throw new Error("Empty response from Gemini API");
+      throw new Error("Empty response from Groq API");
     }
 
     // Save user message
@@ -67,7 +66,7 @@ Do not ask follow-up questions unless absolutely necessary.`;
       { userId },
       {
         $push: { messages: { role: "user", content: message } },
-        model: "Gemini-2.0-Flash",
+        model: "Llama-3.3-70B",
       },
       { upsert: true, new: true }
     );
@@ -88,7 +87,7 @@ Do not ask follow-up questions unless absolutely necessary.`;
     let errorMessage = "Sorry, I'm having trouble connecting to the AI model.";
     
     if (error.message?.includes("API key")) {
-      errorMessage = "API key error. Please check your Gemini API configuration.";
+      errorMessage = "API key error. Please check your Groq API configuration.";
     } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
       errorMessage = "API rate limit reached. Please try again in a moment.";
     } else if (error.message?.includes("SAFETY")) {

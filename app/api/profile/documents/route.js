@@ -7,6 +7,7 @@ import User from "@/models/User";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function GET(req) {
+
   await dbConnect();
 
   // Get token from Authorization header

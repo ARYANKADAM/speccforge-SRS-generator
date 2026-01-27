@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import mongoose from "mongoose";
 import SRSForm from "@/models/SRSForm";
 import dbConnect from "@/lib/mongodb";
@@ -10,7 +10,7 @@ import { generateSimplePDF } from "@/lib/simplePdfGenerator";
 import { uploadPDFToCloudinary } from "@/lib/cloudinaryPDF";
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Retry function with exponential backoff
 async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
@@ -126,11 +126,18 @@ ${
 Format the response as markdown only. Do not include any explanations or JSON. Use markdown headings and bullet points where appropriate.
 `;
 
-    // Generate markdown with Gemini
-    console.log("Generating SRS with Gemini API...");
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const result = await model.generateContent(prompt);
-    const markdown = result.response.text();
+    // Generate markdown with Groq
+    console.log("Generating SRS with Groq API...");
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+    });
+    const markdown = chatCompletion.choices[0]?.message?.content || "";
     console.log("Successfully generated SRS document");
 
     // Generate PDF from markdown
