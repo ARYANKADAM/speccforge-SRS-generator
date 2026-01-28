@@ -126,7 +126,7 @@ ${
 Format the response as markdown only. Do not include any explanations or JSON. Use markdown headings and bullet points where appropriate.
 `;
 
-    // Generate markdown with Groq
+    
     console.log("Generating SRS with Groq API...");
     const chatCompletion = await groq.chat.completions.create({
       messages: [
@@ -140,7 +140,7 @@ Format the response as markdown only. Do not include any explanations or JSON. U
     const markdown = chatCompletion.choices[0]?.message?.content || "";
     console.log("Successfully generated SRS document");
 
-    // Generate PDF from markdown
+   
     console.log("Generating PDF from markdown...");
     let pdfBuffer = null;
     let pdfUrl = null;
@@ -148,7 +148,7 @@ Format the response as markdown only. Do not include any explanations or JSON. U
       pdfBuffer = await generatePDF(markdown, fields.projectName || "SRS-Document");
       console.log("PDF generated successfully, size:", pdfBuffer.length, "bytes");
       
-      // Upload PDF to Cloudinary
+      
       try {
         pdfUrl = await uploadPDFToCloudinary(pdfBuffer, fields.projectName || "srs-document");
         console.log("PDF uploaded to Cloudinary:", pdfUrl);
