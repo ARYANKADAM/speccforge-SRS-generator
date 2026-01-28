@@ -3,7 +3,15 @@ import jwt from "jsonwebtoken";
 import Groq from "groq-sdk";
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// Lazy initialization to avoid build-time errors when env vars aren't available
+let groqClient = null;
+function getGroqClient() {
+  if (!groqClient) {
+    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return groqClient;
+}
 
 // Retry function with exponential backoff for rate limits
 async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 2000) {
@@ -98,7 +106,7 @@ Remember: Return ONLY the JSON object, nothing else. No markdown, no explanation
 
     // Use Groq to generate suggestions with retry logic
     const result = await retryWithBackoff(async () => {
-      return await groq.chat.completions.create({
+      return await getGroqClient().chat.completions.create({
         messages: [
           {
             role: "user",
