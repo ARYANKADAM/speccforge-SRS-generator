@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { promises as fs } from "fs";
 
 // Optional: import your SRSForm model if you want to fetch markdown by docId
@@ -71,8 +72,13 @@ export async function POST(req) {
       </div>
     </body></html>`;
 
-    // Generate PDF with Puppeteer
-    const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+    // Generate PDF with Puppeteer (serverless-compatible)
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
     const page = await browser.newPage();
     await page.setContent(fullHtml, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
