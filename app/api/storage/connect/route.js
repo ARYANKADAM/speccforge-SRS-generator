@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import {
   getAppBaseUrl,
   buildStateToken,
+  getGoogleOAuthConfig,
   getGoogleRedirectUri,
   getOneDriveRedirectUri,
 } from "@/lib/storageAuth";
@@ -37,13 +38,14 @@ export async function POST(req) {
     const state = buildStateToken({ userId, provider, redirectPath });
 
     if (provider === "google") {
-      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      const googleOAuth = getGoogleOAuthConfig(baseUrl);
+      if (!googleOAuth.clientId || !googleOAuth.clientSecret) {
         return NextResponse.json({ error: "Google OAuth is not configured" }, { status: 500 });
       }
 
-      const redirectUri = getGoogleRedirectUri(baseUrl);
+      const redirectUri = googleOAuth.redirectUri || getGoogleRedirectUri(baseUrl);
       const scope = encodeURIComponent("https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email");
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(process.env.GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleOAuth.clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
 
       return NextResponse.json({ authUrl });
     }

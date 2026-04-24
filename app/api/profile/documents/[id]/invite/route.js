@@ -7,6 +7,23 @@ import SRSForm from "@/models/SRSForm";
 const JWT_SECRET = process.env.JWT_SECRET;
 const COLLAB_TOKEN_SECRET = `${process.env.JWT_SECRET}:collab`;
 
+const getAppBaseUrl = (req) => {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
+  }
+
+  const origin = req.headers.get("origin");
+  if (origin) {
+    return origin.replace(/\/$/, "");
+  }
+
+  return "http://localhost:3000";
+};
+
 export async function POST(req, { params }) {
   await dbConnect();
 
@@ -63,8 +80,12 @@ export async function POST(req, { params }) {
       { expiresIn: "7d" }
     );
 
+    const appBaseUrl = getAppBaseUrl(req);
+    const inviteUrl = `${appBaseUrl}/collab/accept?token=${encodeURIComponent(inviteToken)}`;
+
     return NextResponse.json({
       inviteToken,
+      inviteUrl,
       remainingCollaboratorSlots,
       maxEditors,
     });

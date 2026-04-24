@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 import dbConnect from "@/lib/mongodb";
 import StorageConnection from "@/models/StorageConnection";
-import { getAppBaseUrl, parseStateToken, getGoogleRedirectUri } from "@/lib/storageAuth";
+import { getAppBaseUrl, parseStateToken, getGoogleOAuthConfig } from "@/lib/storageAuth";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -20,12 +20,15 @@ export async function GET(req) {
     }
 
     const baseUrl = getAppBaseUrl(req);
-    const redirectUri = getGoogleRedirectUri(baseUrl);
+    const googleOAuth = getGoogleOAuthConfig(baseUrl);
+    if (!googleOAuth.clientId || !googleOAuth.clientSecret) {
+      throw new Error("Google OAuth is not configured");
+    }
 
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri
+      googleOAuth.clientId,
+      googleOAuth.clientSecret,
+      googleOAuth.redirectUri
     );
 
     const { tokens } = await oauth2Client.getToken(code);

@@ -89,27 +89,12 @@ export default function Profile() {
 
   const handleGenerateInvite = async (docId) => {
     try {
-      const emailInput = window.prompt("Enter collaborator emails (comma separated)");
-      if (!emailInput) return;
-
-      const emails = emailInput
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean);
-
-      if (emails.length === 0) {
-        alert("Please enter at least one valid email.");
-        return;
-      }
-
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/profile/documents/${docId}/invite-email`, {
+      const response = await fetch(`/api/profile/documents/${docId}/invite`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ emails }),
       });
 
       const data = await response.json();
@@ -117,10 +102,30 @@ export default function Profile() {
         throw new Error(data.error || "Failed to generate invite link");
       }
 
-      alert(`Invite emails sent to ${data.sent?.length || 0} user(s). Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+      const inviteUrl = data.inviteUrl || `${window.location.origin}/collab/accept?token=${encodeURIComponent(data.inviteToken)}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "SpecForge Collaboration Invite",
+            text: "Join my SpecForge document as a collaborator.",
+            url: inviteUrl,
+          });
+        } catch {
+          // If user cancels share, continue to copy fallback.
+        }
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(inviteUrl);
+        alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+        return;
+      }
+
+      window.prompt("Copy and share this invite link:", inviteUrl);
     } catch (err) {
       console.error("Error generating invite link:", err);
-      alert(err.message || "Failed to send invite emails");
+      alert(err.message || "Failed to generate invite link");
     }
   };
 

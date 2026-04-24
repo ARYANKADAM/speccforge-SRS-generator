@@ -68,27 +68,12 @@ export default function DocumentView({ params }) {
 
   const handleGenerateInvite = async () => {
     try {
-      const emailInput = window.prompt("Enter collaborator emails (comma separated)");
-      if (!emailInput) return;
-
-      const emails = emailInput
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean);
-
-      if (emails.length === 0) {
-        alert("Please enter at least one valid email.");
-        return;
-      }
-
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/profile/documents/${id}/invite-email`, {
+      const response = await fetch(`/api/profile/documents/${id}/invite`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ emails }),
       });
 
       const data = await response.json();
@@ -96,9 +81,29 @@ export default function DocumentView({ params }) {
         throw new Error(data.error || "Failed to generate invite link");
       }
 
-      alert(`Invite emails sent to ${data.sent?.length || 0} user(s). Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+      const inviteUrl = data.inviteUrl || `${window.location.origin}/collab/accept?token=${encodeURIComponent(data.inviteToken)}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "SpecForge Collaboration Invite",
+            text: "Join my SpecForge document as a collaborator.",
+            url: inviteUrl,
+          });
+        } catch {
+          // If user cancels share, continue to copy fallback.
+        }
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(inviteUrl);
+        alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+        return;
+      }
+
+      window.prompt("Copy and share this invite link:", inviteUrl);
     } catch (err) {
-      alert(err.message || "Failed to send invite emails");
+      alert(err.message || "Failed to generate invite link");
     }
   };
 
@@ -132,10 +137,10 @@ export default function DocumentView({ params }) {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = window.document.createElement("a");
       a.href = url;
       a.download = `${(document?.projectName || "document").replace(/\s+/g, "_")}_SpecForge.pdf`;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
@@ -164,10 +169,10 @@ export default function DocumentView({ params }) {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const fileExtension = format === "pptx" ? "pptx" : "docx";
-      const a = document.createElement("a");
+      const a = window.document.createElement("a");
       a.href = url;
       a.download = `${(document?.projectName || "document").replace(/\s+/g, "_")}.${fileExtension}`;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
@@ -459,7 +464,7 @@ export default function DocumentView({ params }) {
                 onClick={handleGenerateInvite}
                 className="inline-flex items-center gap-2 rounded-lg border border-violet-400/40 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20"
               >
-                Invite Editors
+                Share Invite Link
               </button>
             )}
             <button

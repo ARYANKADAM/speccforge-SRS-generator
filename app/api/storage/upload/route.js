@@ -6,6 +6,7 @@ import { Readable } from "stream";
 import dbConnect from "@/lib/mongodb";
 import SRSForm from "@/models/SRSForm";
 import StorageConnection from "@/models/StorageConnection";
+import { getGoogleOAuthConfig } from "@/lib/storageAuth";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -22,10 +23,15 @@ const canAccessDocument = (document, userId) =>
 const normalizeProvider = (value) => String(value || "").toLowerCase();
 
 const getGoogleClient = async (connection) => {
+  const googleOAuth = getGoogleOAuthConfig("");
+  if (!googleOAuth.clientId || !googleOAuth.clientSecret) {
+    throw new Error("Google OAuth is not configured");
+  }
+
   const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    googleOAuth.clientId,
+    googleOAuth.clientSecret,
+    googleOAuth.redirectUri
   );
 
   oauth2Client.setCredentials({
