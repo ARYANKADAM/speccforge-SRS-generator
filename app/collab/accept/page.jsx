@@ -10,16 +10,17 @@ export default function AcceptCollabInvitePage() {
 
   useEffect(() => {
     const acceptInvite = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
       const inviteToken = new URLSearchParams(window.location.search).get("token");
       if (!inviteToken) {
         setStatus("error");
         setMessage("Invalid invite link.");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        const returnTo = `${window.location.pathname}${window.location.search}`;
+        router.push(`/login?returnTo=${encodeURIComponent(returnTo)}`);
         return;
       }
 
@@ -50,7 +51,12 @@ export default function AcceptCollabInvitePage() {
         }, 1000);
       } catch (error) {
         setStatus("error");
-        setMessage(error.message || "Could not accept invite.");
+        const msg = error?.message || "Could not accept invite.";
+        if (msg.toLowerCase().includes("jwt expired")) {
+          setMessage("Invite link expired. Ask the owner to generate a new invite link.");
+          return;
+        }
+        setMessage(msg);
       }
     };
 

@@ -1,15 +1,19 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Nav from "../components/Nav";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const returnTo = searchParams.get("returnTo") || "";
+  const safeReturnTo = returnTo.startsWith("/") ? returnTo : "/profile";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,7 +39,7 @@ export default function Login() {
 
       // Store token in local storage
       localStorage.setItem("token", data.token);
-      router.push("/profile");
+      router.push(safeReturnTo);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -198,7 +202,7 @@ export default function Login() {
                 <p className="text-sm text-white">
                   Don't have an account?{" "}
                   <Link
-                    href="/signup"
+                    href={safeReturnTo ? `/signup?returnTo=${encodeURIComponent(safeReturnTo)}` : "/signup"}
                     className="font-bold text-blue-600 hover:text-blue-700 transition-colors duration-300"
                   >
                     Create Account →
