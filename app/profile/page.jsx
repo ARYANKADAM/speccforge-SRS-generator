@@ -391,7 +391,7 @@ export default function Profile() {
                               </svg>
                               Edit
                             </Link>
-                            {!doc.sharedWithMe && (
+                            {/* {!doc.sharedWithMe && (
                               <button
                                 onClick={() => handleGenerateInvite(doc._id)}
                                 className="flex-1 inline-flex items-center justify-center gap-2 text-violet-200 hover:text-violet-100 font-semibold py-2 px-3 bg-violet-500/15 hover:bg-violet-500/25 rounded-lg transition-colors duration-300 border border-violet-400/30"
@@ -402,7 +402,7 @@ export default function Profile() {
                                 </svg>
                                 Invite
                               </button>
-                            )}
+                            )} */}
                           </div>
                           
                           {/* Download Buttons Row */}

@@ -462,38 +462,31 @@ export default function DocumentView({ params }) {
                 Edit
               </Link>
             )}
-            {permissions.isOwner && (
-              <button
-                onClick={handleGenerateInvite}
-                className="inline-flex items-center gap-2 rounded-lg border border-violet-400/40 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20"
-              >
-                Share Invite Link
-              </button>
-            )}
+            
             <button
               onClick={handleDownloadPdf}
               className="inline-flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
             >
               Download PDF
             </button>
-            <button
+            {/* <button
               onClick={handleExportFile}
               className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
             >
               Export DOCX
-            </button>
-            <button
+            </button> */}
+            {/* <button
               onClick={() => handleUploadToStorage("google", "pdf")}
               className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
             >
               Save To Drive
-            </button>
-            <button
+            </button> */}
+            {/* <button
               onClick={() => handleUploadToStorage("onedrive", "pdf")}
               className="inline-flex items-center gap-2 rounded-lg border border-blue-400/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/20"
             >
               Save To OneDrive
-            </button>
+            </button> */}
           </div>
         </div>
 
