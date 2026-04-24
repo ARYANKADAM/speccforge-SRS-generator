@@ -6,6 +6,25 @@ const FeatureSchema = new mongoose.Schema({
   requirements: String,
 });
 
+const CollaboratorSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    email: { type: String, lowercase: true, trim: true },
+    name: { type: String, trim: true },
+    invitedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    acceptedAt: { type: Date },
+  },
+  { _id: false, timestamps: true }
+);
+
 const SRSFormSchema = new mongoose.Schema(
   {
     createdBy: { 
@@ -68,9 +87,19 @@ const SRSFormSchema = new mongoose.Schema(
         message: props => `${props.value} is not a valid PDF URL!`
       }
     }, // PDF file link
+    collaborators: {
+      type: [CollaboratorSchema],
+      default: [],
+    },
+    collaboration: {
+      maxEditors: { type: Number, default: 4, min: 1, max: 20 },
+    },
   },
   { timestamps: true }
 );
+
+SRSFormSchema.index({ createdBy: 1, createdAt: -1 });
+SRSFormSchema.index({ "collaborators.userId": 1, createdAt: -1 });
 
 // Clear the model if it exists to ensure schema changes are applied
 // This is important for development when schema changes frequently

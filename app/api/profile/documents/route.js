@@ -22,13 +22,22 @@ export async function GET(req) {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.id;
 
-    // Get user documents
+    // Get owned + shared documents
     const documents = await SRSForm.find({ 
       $or: [
-        { userId: userId },
-        { createdBy: userId }
+        { createdBy: userId },
+        { "collaborators.userId": userId }
       ]
     }).sort({ createdAt: -1 });  // Sort by most recent first
+
+    const normalizedDocuments = documents.map((doc) => {
+      const rawDoc = doc.toObject();
+      const isOwner = rawDoc.createdBy?.toString() === userId;
+      return {
+        ...rawDoc,
+        sharedWithMe: !isOwner,
+      };
+    });
 
     // Get user information
     const user = await User.findById(userId).select("-password");
@@ -39,7 +48,7 @@ export async function GET(req) {
 
     return NextResponse.json({ 
       user,
-      documents
+      documents: normalizedDocuments
     });
   } catch (error) {
     console.error("Error fetching user documents:", error);
