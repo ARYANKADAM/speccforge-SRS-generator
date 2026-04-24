@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function AcceptCollabInvitePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("Preparing invite...");
 
@@ -17,7 +16,7 @@ export default function AcceptCollabInvitePage() {
         return;
       }
 
-      const inviteToken = searchParams.get("token");
+      const inviteToken = new URLSearchParams(window.location.search).get("token");
       if (!inviteToken) {
         setStatus("error");
         setMessage("Invalid invite link.");
@@ -56,7 +55,7 @@ export default function AcceptCollabInvitePage() {
     };
 
     acceptInvite();
-  }, [router, searchParams]);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
