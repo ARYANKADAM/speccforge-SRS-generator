@@ -1,19 +1,21 @@
 "use client";
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Nav from "../components/Nav";
 
 export default function Login() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [safeReturnTo, setSafeReturnTo] = useState("/profile");
 
-  const returnTo = searchParams.get("returnTo") || "";
-  const safeReturnTo = returnTo.startsWith("/") ? returnTo : "/profile";
+  useEffect(() => {
+    const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "";
+    setSafeReturnTo(returnTo.startsWith("/") ? returnTo : "/profile");
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
