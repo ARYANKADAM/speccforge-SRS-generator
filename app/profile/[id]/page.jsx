@@ -96,9 +96,13 @@ export default function DocumentView({ params }) {
       }
 
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(inviteUrl);
-        alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
-        return;
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+          alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+          return;
+        } catch {
+          // Clipboard can fail when tab loses focus (e.g., share sheet opened).
+        }
       }
 
       window.prompt("Copy and share this invite link:", inviteUrl);
@@ -149,7 +153,7 @@ export default function DocumentView({ params }) {
     }
   };
 
-  const handleExportFile = async (format) => {
+  const handleExportFile = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/profile/documents/${id}/export`, {
@@ -158,26 +162,25 @@ export default function DocumentView({ params }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ format }),
+        body: JSON.stringify({ format: "docx" }),
       });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || `Failed to export ${format.toUpperCase()}`);
+        throw new Error(data.error || "Failed to export DOCX");
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const fileExtension = format === "pptx" ? "pptx" : "docx";
       const a = window.document.createElement("a");
       a.href = url;
-      a.download = `${(document?.projectName || "document").replace(/\s+/g, "_")}.${fileExtension}`;
+      a.download = `${(document?.projectName || "document").replace(/\s+/g, "_")}.docx`;
       window.document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.message || `Failed to export ${format.toUpperCase()}`);
+      alert(err.message || "Failed to export DOCX");
     }
   };
 
@@ -474,16 +477,10 @@ export default function DocumentView({ params }) {
               Download PDF
             </button>
             <button
-              onClick={() => handleExportFile("docx")}
+              onClick={handleExportFile}
               className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
             >
               Export DOCX
-            </button>
-            <button
-              onClick={() => handleExportFile("pptx")}
-              className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/40 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20"
-            >
-              Export PPT
             </button>
             <button
               onClick={() => handleUploadToStorage("google", "pdf")}

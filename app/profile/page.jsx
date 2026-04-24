@@ -117,9 +117,13 @@ export default function Profile() {
       }
 
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(inviteUrl);
-        alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
-        return;
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+          alert(`Invite link copied. Remaining collaborator slots: ${data.remainingCollaboratorSlots}`);
+          return;
+        } catch {
+          // Clipboard can fail when tab loses focus (e.g., share sheet opened).
+        }
       }
 
       window.prompt("Copy and share this invite link:", inviteUrl);

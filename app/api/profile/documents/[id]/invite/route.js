@@ -12,13 +12,19 @@ const getAppBaseUrl = (req) => {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
-  }
-
   const origin = req.headers.get("origin");
   if (origin) {
     return origin.replace(/\/$/, "");
+  }
+
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+    return `${forwardedProto}://${forwardedHost.replace(/\/$/, "")}`;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
   }
 
   return "http://localhost:3000";
